@@ -1,60 +1,55 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exceptions.FilmExceptions;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
-import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    protected static int id = 1;
-    private final HashMap<Integer, Film> films = new HashMap<>();
-    @GetMapping()
-    public java.util.Collection<Film> getFilms() {
-        log.info("Вызван метод getFilms");
-        return films.values();
+    private final FilmStorage filmStorage;
+
+    public FilmController(FilmStorage filmStorage) {
+        this.filmStorage = filmStorage;
     }
+
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(@RequestParam(required = false) Integer count) {
+        return filmStorage.getTenMostPopular(count);
+    }
+
+    @PutMapping("{id}/like/{userId}")
+    public void addLikes(@PathVariable int id, @PathVariable int userId) {
+        filmStorage.addLike(id, userId);
+    }
+
+    @DeleteMapping("{id}/like/{userId}")
+    public void removeLike(@PathVariable int id, @PathVariable int userId) {
+        filmStorage.removeLike(id, userId);
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilm(@PathVariable int id) {
+        return filmStorage.getFilm(id);
+    }
+
+    @GetMapping
+    public Collection<Film> getFilms() {
+        return filmStorage.getFilms();
+    }
+
     @PostMapping()
-    public Film postFilm(@RequestBody Film film) throws FilmExceptions {
-        log.info("Вызван метод postFilm");
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new FilmExceptions("Дата релиза — не должна быть раньше 28 декабря 1895 года");
-        }  else if (film.getName().isEmpty()) {
-            throw new FilmExceptions("Название не может быть пустым");
-        }  else if (film.getDescription().length() > 200) {
-            throw new FilmExceptions("Длина описания не должна быть больше 200 символов");
-        } else if (film.getDuration() < 0) {
-            throw new FilmExceptions("Продолжительность отрицательная");
-        } else {
-            film.setId(id);
-            id++;
-            films.put(film.getId(), film);
-            return film;
-        }
+    public Film postFilm(@RequestBody Film film) {
+        return filmStorage.createFilm(film);
     }
 
     @PutMapping()
-    public Film putFilm(@RequestBody Film film) throws FilmExceptions {
-        log.info("Вызван метод putFilm");
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new FilmExceptions("Дата релиза — не должна быть раньше 28 декабря 1895 года");
-        } else if (!films.containsKey(film.getId())) {
-            throw new FilmExceptions("Фильма с таким id не существует");
-        } else if (film.getName().isEmpty()) {
-            throw new FilmExceptions("Название не может быть пустым");
-        } else if (film.getDescription().length() > 200) {
-            throw new FilmExceptions("Длина описания не должна быть больше 200 символов");
-        } else if (film.getDuration() < 0) {
-            throw new FilmExceptions("Продолжительность отрицательная");
-        } else {
-            films.put(film.getId(), film);
-            return film;
-        }
+    public Film putFilm(@RequestBody Film film) {
+        return filmStorage.updateFilm(film);
     }
 
 }

@@ -1,59 +1,61 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exceptions.ValidationExcpetions;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private static int userId = 1;
-    private final HashMap<Integer, User> userList = new HashMap<>();
-    @GetMapping()
+    private final UserStorage userStorage;
+
+    public UserController(UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
+
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable int id) {
+        return userStorage.getUser(id);
+    }
+
+    @GetMapping
     public Collection<User> getUsers() {
-        log.info("Вызван метод getUsers");
-        return userList.values();
+        return userStorage.getUsers();
     }
 
     @PostMapping()
-    public User createUser(@Valid @RequestBody User user) throws ValidationExcpetions {
-        log.info("Вызван метод createUser");
-        if (user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            throw new ValidationExcpetions("Логин не может быть пустым или содержать пробелы");
-        } else if (user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationExcpetions("Дата релиза — не раньше 28 декабря 1895 года");
-        } else {
-            if (user.getName().isEmpty()) {
-                user.setName(user.getLogin());
-            }
-            user.setId(userId++);
-            userList.put(user.getId(), user);
-            return user;
-        }
+    public User createUser(@Valid @RequestBody User user) {
+        return userStorage.createUser(user);
     }
 
-    @PutMapping()
-    public User putUser(@Valid @RequestBody User user) throws ValidationExcpetions {
-        log.info("Вызван метод putUser");
-        if (user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            throw new ValidationExcpetions("Логин не может быть пустым или содержать пробелы");
-        }  else if (!userList.containsKey(user.getId())) {
-            throw new ValidationExcpetions("Нет такого Id");
-        } else if (user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationExcpetions("Дата релиза — не раньше 28 декабря 1895 года");
-        } else {
-            if (user.getName().isBlank()) {
-                user.setName(user.getLogin());
-            }
-            userList.put(user.getId(), user);
-            return user;
-        }
+    @PutMapping
+    public User updateUser(@Valid @RequestBody User user) {
+        return userStorage.updateUser(user);
     }
+
+    @PutMapping("{id}/friends/{friendId}")
+    public void addFriend(@PathVariable int id, @PathVariable int friendId) {
+        userStorage.addFriend(id, friendId);
+
+    }
+
+    @DeleteMapping("{id}/friends/{friendId}")
+    public void deleteFriends(@PathVariable int id, @PathVariable int friendId) {
+        userStorage.deleteFriend(id, friendId);
+    }
+
+    @GetMapping("{id}/friends")
+    public List<User> getFriends(@PathVariable int id) {
+        return userStorage.getFriend(id);
+    }
+
+    @GetMapping("{id}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable int id, @PathVariable int otherId) {
+        return userStorage.getCommonFriends(id, otherId);
+    }
+
 }
