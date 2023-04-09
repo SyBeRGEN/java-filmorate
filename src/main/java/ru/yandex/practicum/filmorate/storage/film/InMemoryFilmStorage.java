@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class InMemoryFilmStorage implements FilmStorage {
     private int id = 1;
     private final HashMap<Integer, Film> films = new HashMap<>();
+    private final Map<Integer, HashMap<Integer, Boolean>> filmLikes = new HashMap<>();
 
     @Override
     public Film getFilm(int id) {
@@ -48,6 +49,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             film.setId(id);
             id++;
             films.put(film.getId(), film);
+            filmLikes.put(film.getId(), new HashMap<>());
             return film;
         }
     }
@@ -75,17 +77,18 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public void addLike(int idFilm, int idUser) {
         if (films.containsKey(idFilm)) {
-            films.get(idFilm).likes.put(idUser, true);
-            films.get(idFilm).likesCounter();
+
+            filmLikes.get(idFilm).put(idUser, true);
+            films.get(idFilm).setLikesCount(likesCounter(filmLikes.get(idFilm)));
         } else throw new SearchException("Данный Id фильма не найден");
     }
 
     @Override
     public void removeLike(int idFilm, int idUser) {
-        if (films.containsKey(idFilm)) {
-            if (films.get(idFilm).likes.containsKey(idUser)) {
-                films.get(idFilm).likes.put(idUser, false);
-                films.get(idFilm).likesCounter();
+        if (filmLikes.containsKey(idFilm)) {
+            if (filmLikes.get(idFilm).containsKey(idUser)) {
+                filmLikes.get(idFilm).put(idUser, false);
+                films.get(idFilm).setLikesCount(likesCounter(filmLikes.get(idFilm)));
             } else throw new SearchException("Данный пользовательно не воздействовал на лайки");
         } else throw new SearchException("Данный Id фильма не найден");
     }
@@ -96,7 +99,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             count = 10;
         }
 
-        return byFilm(films, Comparator.<Film>comparingInt(Film::getLikesCount).reversed()).values().stream().limit(count).collect(Collectors.toList());
+        return byFilm(films, Comparator.comparingInt(Film::getLikesCount).reversed()).values().stream().limit(count).collect(Collectors.toList());
     }
 
     public static HashMap<Integer, Film> byFilm(
@@ -111,5 +114,15 @@ public class InMemoryFilmStorage implements FilmStorage {
                         (a, b) -> a,
                         LinkedHashMap::new
                 ));
+    }
+
+    public int likesCounter(Map<Integer, Boolean> likes) {
+        int intLikes = 0;
+        for (Boolean aBoolean : likes.values()) {
+            if (aBoolean) {
+                intLikes += 1;
+            }
+        }
+        return intLikes;
     }
 }

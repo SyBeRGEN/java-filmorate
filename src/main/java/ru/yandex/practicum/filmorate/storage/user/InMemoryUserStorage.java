@@ -16,6 +16,7 @@ import java.util.*;
 public class InMemoryUserStorage implements UserStorage {
     private static int userId = 1;
     private final HashMap<Integer, User> userList = new HashMap<>();
+    private final HashMap<Integer, HashSet<Integer>> userFriends = new HashMap<>();
 
     @Override
     public User getUser(int id) {
@@ -46,6 +47,7 @@ public class InMemoryUserStorage implements UserStorage {
             }
             user.setId(userId++);
             userList.put(user.getId(), user);
+            userFriends.put(user.getId(), new HashSet<>());
             return user;
         }
     }
@@ -73,8 +75,8 @@ public class InMemoryUserStorage implements UserStorage {
     public void addFriend(int id, int friendId) {
         if (userList.containsKey(id)) {
             if (userList.containsKey(friendId)) {
-                userList.get(id).friends.add(friendId);
-                userList.get(friendId).friends.add(id);
+                userFriends.get(id).add(friendId);
+                userFriends.get(friendId).add(id);
                 log.info(id + " и " + friendId + " теперь друзья");
             } else throw new SearchException("Пользователь с данным Id не найден" + friendId);
         } else throw new SearchException("Пользователь с данным Id не найден" + id);
@@ -84,9 +86,9 @@ public class InMemoryUserStorage implements UserStorage {
     public void deleteFriend(int id, int friendId) {
         if (userList.containsKey(id)) {
             if (userList.containsKey(friendId)) {
-                if (userList.get(id).friends.contains(friendId)) {
-                    userList.get(id).friends.remove(friendId);
-                    userList.get(friendId).friends.remove(id);
+                if (userFriends.get(id).contains(friendId)) {
+                    userFriends.get(id).remove(friendId);
+                    userFriends.get(friendId).remove(id);
                     log.info(id + " и " + friendId + " больше не друзья");
                 } else throw new FriendsException(id + " и " + friendId + " не являются друзьями");
             } else throw new SearchException("Пользователь с данным Id не найден" + friendId);
@@ -99,7 +101,7 @@ public class InMemoryUserStorage implements UserStorage {
             log.info("Получен список друзей пользователя " + id);
             List<User> friendList = new ArrayList<>();
 
-            for (Integer friend : userList.get(id).friends) {
+            for (Integer friend : userFriends.get(id)) {
                 friendList.add(userList.get(friend));
             }
             return friendList;
@@ -112,7 +114,7 @@ public class InMemoryUserStorage implements UserStorage {
             if (userList.containsKey(otherId)) {
                 List<User> friendList = new ArrayList<>();
 
-                for (Integer integer : findCommonElements(userList.get(id).friends, userList.get(otherId).friends)) {
+                for (Integer integer : findCommonElements(userFriends.get(id), userFriends.get(otherId))) {
                     friendList.add(userList.get(integer));
                 }
                 return friendList;
