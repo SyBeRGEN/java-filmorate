@@ -1,2 +1,4 @@
 # java-filmorate
-Template repository for Filmorate project.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://i.ibb.co/RQV0vTb/Untitled.png">
+</picture>
