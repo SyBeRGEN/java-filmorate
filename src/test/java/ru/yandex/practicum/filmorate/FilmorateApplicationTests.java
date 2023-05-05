@@ -18,5 +18,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 class FilmoRateApplicationTests {
     private final UserDBStorage userStorage;
 
-    
+    @Test
+    public void testFindUserById() {
+
+    }
 }
