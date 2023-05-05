@@ -96,7 +96,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public List<User> getFriend(int id) {
+    public List<User> getFriends(int id) {
         if (userList.containsKey(id)) {
             log.info("Получен список друзей пользователя " + id);
             List<User> friendList = new ArrayList<>();
