@@ -1,3 +1,4 @@
 # java-filmorate
-![Database schema located in repository by below address:](./src/main/resources/schema.png)
-
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://i.ibb.co/RQV0vTb/Untitled.png">
+</picture>
