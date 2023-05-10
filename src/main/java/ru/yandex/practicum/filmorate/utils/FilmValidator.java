@@ -90,7 +90,7 @@ public class FilmValidator {
 
     @SneakyThrows
     public static void validateExistGenre(List<Genre> genreList, Integer id) {
-        if (genreList.isEmpty() || genreList.get(0) == null || !(genreList.get(0).getId() == id)) {
+        if (genreList.isEmpty() || genreList.get(0) == null) {
             throw new SearchException(String.format("Жанр c id %s не найден", id));
         }
     }

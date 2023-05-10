@@ -131,4 +131,9 @@ public class InMemoryUserStorage implements UserStorage {
 
         return common;
     }
+
+    @Override
+    public void deleteAll() {
+
+    }
 }

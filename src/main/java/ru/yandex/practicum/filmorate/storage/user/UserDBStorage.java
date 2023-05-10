@@ -179,4 +179,10 @@ public class UserDBStorage implements UserStorage {
                 rs.getDate("BIRTHDAY").toLocalDate()
         );
     }
+
+    @Override
+    public void deleteAll() {
+        String sqlFilmIds = "DELETE FROM USERS";
+        jdbcTemplate.update(sqlFilmIds);
+    }
 }

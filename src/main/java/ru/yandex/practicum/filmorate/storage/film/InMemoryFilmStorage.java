@@ -147,4 +147,9 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
         return intLikes;
     }
+
+    @Override
+    public void deleteAll() {
+
+    }
 }

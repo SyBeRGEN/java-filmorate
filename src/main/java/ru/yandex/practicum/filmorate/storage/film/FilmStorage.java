@@ -30,4 +30,6 @@ public interface FilmStorage {
 
     public List<Film> getTenMostPopular(Integer count);
 
+    void deleteAll();
+
 }
