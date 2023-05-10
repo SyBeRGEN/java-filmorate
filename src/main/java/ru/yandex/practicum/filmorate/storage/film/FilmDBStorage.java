@@ -18,6 +18,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -86,23 +87,37 @@ public class FilmDBStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getFilms() {
-        //create film
-        String sqlFilmById = "SELECT * FROM FILMS LEFT OUTER JOIN RATINGS ON FILMS.RATINGMPAA_ID = RATINGS.RATINGMPAA_ID";
-        List<Film> films = jdbcTemplate.query(sqlFilmById, FilmDBStorage::makeFilm);
+        String sql = "SELECT *" +
+                "FROM FILMS " +
+                "LEFT OUTER JOIN RATINGS ON FILMS.RATINGMPAA_ID = RATINGS.RATINGMPAA_ID " +
+                "LEFT OUTER JOIN FILM_GENRES ON FILMS.FILM_ID = FILM_GENRES.FILM_ID " +
+                "LEFT OUTER JOIN GENRES ON GENRES.GENRE_ID = FILM_GENRES.GENRE_ID";
 
-        for (Film film : films) {
-            //create genre to film
-            String sqlFilmGenres = "SELECT * " +
-                    "FROM FILM_GENRES LEFT OUTER JOIN GENRES " +
-                    "ON GENRES.GENRE_ID = FILM_GENRES.GENRE_ID " +
-                    "WHERE FILM_ID = ?";
-            List<Genre> filmGenres = jdbcTemplate.query(
-                    sqlFilmGenres, FilmDBStorage::makeGenre, film.getId());
-            //put genre to film
-            film.setGenres(filmGenres);
-        }
+        Map<Integer, Film> filmsMap = new HashMap<>();
+        jdbcTemplate.query(sql, rs -> {
+            int id = rs.getInt("FILM_ID");
+            Film film = filmsMap.get(id);
+            if (film == null) {
+                film = new Film(
+                        rs.getString("FILM_NAME"),
+                        rs.getString("DESCRIPTION"),
+                        rs.getDate("RELEASE_DATE").toLocalDate(),
+                        rs.getInt("DURATION"),
+                        new MPA(rs.getInt("RATINGMPAA_ID"), rs.getString("RATING_NAME")
+                        ));
+                film.setId(rs.getInt("FILM_ID"));
+                filmsMap.put(id, film);
+            }
 
-        return films;
+            int genreId = rs.getInt("GENRE_ID");
+            if (!rs.wasNull()) {
+                String genreName = rs.getString("GENRE_NAME");
+                Genre genre = new Genre(genreId, genreName);
+                film.getGenres().add(genre);
+            }
+        });
+
+        return filmsMap.values();
     }
 
     @Override
@@ -127,13 +142,11 @@ public class FilmDBStorage implements FilmStorage {
                 .stream()
                 .map(Genre::getId)
                 .collect(Collectors.toSet());
-        List<Genre> filmGenres = new ArrayList<>();
-        for (Integer id : genreSet) {
-            String sqlGenresId = "SELECT * FROM GENRES WHERE GENRE_ID = ?";
-            List<Genre> genresById = jdbcTemplate.query(
-                    sqlGenresId, FilmDBStorage::makeGenre, id);
-            FilmValidator.validateExistGenre(genresById, id);
-            filmGenres.add(genresById.get(0));
+        String genreIds = genreSet.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String sqlGenres = "SELECT * FROM GENRES WHERE GENRE_ID IN (" + genreIds + ")";
+        List<Genre> filmGenres = jdbcTemplate.query(sqlGenres, FilmDBStorage::makeGenre);
+        for (Integer integer : genreSet) {
+            FilmValidator.validateExistGenre(filmGenres, integer);
         }
 
         //film --> model
@@ -194,14 +207,9 @@ public class FilmDBStorage implements FilmStorage {
                 .stream()
                 .map(Genre::getId)
                 .collect(Collectors.toSet());
-        List<Genre> filmGenres = new ArrayList<>();
-        for (Integer id : genreSet) {
-            String sqlGenresId = "SELECT * FROM GENRES WHERE GENRE_ID = ?";
-            List<Genre> genresById = jdbcTemplate.query(
-                    sqlGenresId, FilmDBStorage::makeGenre, id);
-            FilmValidator.validateExistGenre(genresById, id);
-            filmGenres.add(genresById.get(0));
-        }
+        String genreIds = genreSet.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String sqlGenres = "SELECT * FROM GENRES WHERE GENRE_ID IN (" + genreIds + ")";
+        List<Genre> filmGenres = jdbcTemplate.query(sqlGenres, FilmDBStorage::makeGenre);
 
         //film --> model
         film.setGenres(filmGenres);
@@ -274,13 +282,12 @@ public class FilmDBStorage implements FilmStorage {
         //get film id's
         String sqlFilmIds = "SELECT FILM_ID FROM FILMS";
         List<Integer> filmIdsList = jdbcTemplate.queryForList(sqlFilmIds, Integer.class);
-        //iter for all films
-        HashMap<Integer, Integer> mostPopularMap = new HashMap<>();
-        for (Integer filmId : filmIdsList) {
-            String sqlFilm = "SELECT USER_ID FROM LIKES WHERE FILM_ID = ?";
-            List<Integer> userIdForFilm = jdbcTemplate.queryForList(sqlFilm, Integer.class, filmId);
-            mostPopularMap.put(filmId, userIdForFilm.size());
-        }
+        //collector
+        HashMap<Integer, Integer> mostPopularMap = (HashMap<Integer, Integer>) filmIdsList.stream()
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        filmId -> jdbcTemplate.queryForList("SELECT USER_ID FROM LIKES WHERE FILM_ID = ?", Integer.class, filmId).size()
+                ));
         List<Integer> mostTenSorted = byLikesDesc(mostPopularMap);
         List<Film> mostTenSortedFilm = new ArrayList<>();
         //return 10 films
