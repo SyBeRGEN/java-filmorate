@@ -175,12 +175,16 @@ public class FilmDBStorage implements FilmStorage {
         film.setId(filmId);
 
         //film_genres --> DB
-        String sqlCreateFilmGenre = "INSERT INTO FILM_GENRES(" +
-                "FILM_ID, " +
-                "GENRE_ID) " +
-                "VALUES (?, ?)";
-        for (Integer genreId : genreSet) {
-            jdbcTemplate.update(sqlCreateFilmGenre, film.getId(), genreId);
+        StringBuilder askSQL = new StringBuilder();
+        if (!genreSet.isEmpty()) {
+            for (Integer genreId : genreSet) {
+                askSQL.append("(").append(film.getId()).append(", ").append(genreId).append("),");
+            }
+            if (askSQL.toString().endsWith(",")) {
+                askSQL = new StringBuilder(askSQL.substring(0, askSQL.length() - 1));
+            }
+            String sqlCreateFilmGenre = "INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES" + askSQL + ";";
+            jdbcTemplate.update(sqlCreateFilmGenre);
         }
         return film;
     }
@@ -231,12 +235,16 @@ public class FilmDBStorage implements FilmStorage {
         jdbcTemplate.update(sqlDeleteFilmGenre, film.getId());
 
         //put film_genre --> DB
-        String sqlCreateFilmGenre = "INSERT INTO FILM_GENRES(" +
-                "FILM_ID, " +
-                "GENRE_ID) " +
-                "VALUES (?, ?)";
-        for (Integer genreId : genreSet) {
-            jdbcTemplate.update(sqlCreateFilmGenre, film.getId(), genreId);
+        StringBuilder askSQL = new StringBuilder();
+        if (!genreSet.isEmpty()) {
+            for (Integer genreId : genreSet) {
+                askSQL.append("(").append(film.getId()).append(", ").append(genreId).append("),");
+            }
+            if (askSQL.toString().endsWith(",")) {
+                askSQL = new StringBuilder(askSQL.substring(0, askSQL.length() - 1));
+            }
+            String sqlCreateFilmGenre = "INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES" + askSQL + ";";
+            jdbcTemplate.update(sqlCreateFilmGenre);
         }
         return film;
     }
@@ -290,9 +298,10 @@ public class FilmDBStorage implements FilmStorage {
                 ));
         List<Integer> mostTenSorted = byLikesDesc(mostPopularMap);
         List<Film> mostTenSortedFilm = new ArrayList<>();
+        List<Film> allFilms = new ArrayList<>(getFilms());
         //return 10 films
         for (Integer id : mostTenSorted) {
-            mostTenSortedFilm.add(getFilm(id));
+            allFilms.stream().filter(f -> f.getId().equals(id)).findFirst().ifPresent(mostTenSortedFilm::add);
         }
         return mostTenSortedFilm.stream().limit(count).collect(Collectors.toList());
     }

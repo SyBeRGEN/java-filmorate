@@ -143,8 +143,10 @@ public class UserDBStorage implements UserStorage {
                 sqlFriendsByUserId, (rs, rowNum) -> rs.getInt("FRIEND_ID"), id);
 
         List<User> friendsUser = new ArrayList<>();
+        List<User> userList = new ArrayList<>(getUsers());
+
         for (Integer friend : friends) {
-            friendsUser.add(getUser(friend));
+            userList.stream().filter(f -> f.getId() == friend).findFirst().ifPresent(friendsUser::add);
         }
         log.info(friendsUser.toString());
         return friendsUser;
