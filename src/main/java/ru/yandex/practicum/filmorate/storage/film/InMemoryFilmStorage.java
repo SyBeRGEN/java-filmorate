@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.FilmExceptions;
 import ru.yandex.practicum.filmorate.exceptions.SearchException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MPA;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -18,6 +20,26 @@ public class InMemoryFilmStorage implements FilmStorage {
     private int id = 1;
     private final HashMap<Integer, Film> films = new HashMap<>();
     private final Map<Integer, HashMap<Integer, Boolean>> filmLikes = new HashMap<>();
+
+    @Override
+    public List<Genre> getGenreList() {
+        return null;
+    }
+
+    @Override
+    public Genre getGenreById(Integer id) {
+        return null;
+    }
+
+    @Override
+    public List<MPA> getMpaList() {
+        return null;
+    }
+
+    @Override
+    public MPA getMpaById(Integer id) {
+        return null;
+    }
 
     @Override
     public Film getFilm(int id) {
@@ -124,5 +146,10 @@ public class InMemoryFilmStorage implements FilmStorage {
             }
         }
         return intLikes;
+    }
+
+    @Override
+    public void deleteAll() {
+
     }
 }
